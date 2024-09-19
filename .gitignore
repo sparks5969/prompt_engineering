@@ -1,0 +1,123 @@
+# Ignore compiled files
+*.o
+*.out
+
+# Ignore dependencies
+/node_modules
+/bower_components
+
+# Ignore build artifacts
+/build
+/dist
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore IDE and editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore system files
+.DS_Store
+
+# Ignore virtual environment directories
+venv/
+.venv/
+
+# Ignore Python package files
+*.egg-info/
+
+# Ignore Pipenv files
+Pipfile.lock
+
+# Ignore Conda environment files
+*.conda
+
+# Virtual Environment
+.venv/
+venv/
+env/
+.env/
+.virtualenv/
+
+# Python
+*.py[cod]
+__pycache__/
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+htmlcov
+
+# Translations
+*.mo
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating Systems
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Specific files
+*iotools.py
+*_version.py
+
+# Logs
+*.log
+
+# Database
+*.sqlite3
+
+# Documentation
+docs/_build/
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Temporary files
+*.bak
+*.swp
+*.swo
+*~
+
+# Patch files
+*.patch
+*.diff
