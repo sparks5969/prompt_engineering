@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next Word Predictor</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #input-container, #results { margin-bottom: 20px; }
+        #input-text { width: 70%; padding: 5px; }
+        #send-button { padding: 5px 10px; }
+        #model-select, #temperature { margin-right: 10px; }
+        #predictions { list-style-type: none; padding: 0; }
+        #predictions li { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Next Word Predictor</h1>
+    <div id="input-container">
+        <input type="text" id="input-text" placeholder="Enter your sentence here">
+        <button id="send-button">Predict</button>
+    </div>
+    <div>
+        <select id="model-select">
+            {% for model in models %}
+            <option value="{{ model }}">{{ model }}</option>
+            {% endfor %}
+        </select>
+        <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+        <span id="temperature-value">0.7</span>
+    </div>
+    <div id="results">
+        <h2>Predictions:</h2>
+        <ul id="predictions"></ul>
+    </div>
+
+    <script>
+        const inputText = document.getElementById('input-text');
+        const sendButton = document.getElementById('send-button');
+        const modelSelect = document.getElementById('model-select');
+        const temperatureSlider = document.getElementById('temperature');
+        const temperatureValue = document.getElementById('temperature-value');
+        const predictionsList = document.getElementById('predictions');
+
+        temperatureSlider.addEventListener('input', (e) => {
+            temperatureValue.textContent = e.target.value;
+        });
+
+        sendButton.addEventListener('click', () => {
+            const input = inputText.value;
+            const model = modelSelect.value;
+            const temperature = temperatureSlider.value;
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ input_text: input, model: model, temperature: temperature }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                predictionsList.innerHTML = '';
+                data.forEach(prediction => {
+                    const li = document.createElement('li');
+                    li.textContent = `${prediction.word}: ${(prediction.probability * 100).toFixed(2)}%`;
+                    predictionsList.appendChild(li);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                predictionsList.innerHTML = '<li>An error occurred. Please try again.</li>';
+            });
+        });
+    </script>
+</body>
+</html>

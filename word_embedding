@@ -1,0 +1,111 @@
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+
+import torch
+
+import torch
+
+import torch
+
+def get_next_word_probabilities(input_text, model, tokenizer, top_k=10, temperature=1.0, context_length=5):
+    # Check if the tokenizer has a pad token, if not, set it
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        model.config.pad_token_id = model.config.eos_token_id
+
+    # Tokenize the input text
+    inputs = tokenizer(input_text, return_tensors='pt', padding=True, truncation=True)
+    input_ids = inputs['input_ids']
+    attention_mask = inputs['attention_mask']
+    
+    # Get the model's prediction
+    with torch.no_grad():
+        outputs = model(input_ids, attention_mask=attention_mask)
+        predictions = outputs.logits
+    
+    # Get the last token's predictions
+    next_token_logits = predictions[0, -1, :]
+    
+    # Apply temperature
+    next_token_logits = next_token_logits / temperature
+    
+    # Convert logits to probabilities
+    next_token_probs = torch.nn.functional.softmax(next_token_logits, dim=-1)
+    
+    # Get the top k probabilities and their corresponding tokens
+    top_k_probs, top_k_indices = torch.topk(next_token_probs, top_k)
+    
+    # Convert to words and create a list of (word, probability) tuples
+    top_k_words_and_probs = [
+        (tokenizer.decode([idx.item()]).strip(), prob.item())
+        for idx, prob in zip(top_k_indices, top_k_probs)
+    ]
+    
+    # If the last word is a common word or punctuation, consider more context
+    last_word = input_text.strip().split()[-1].lower()
+    if last_word in ["the", "a", "an", ":", ",", "."]:
+        # Get the last few tokens for context
+        context_tokens = input_ids[0, -context_length:]
+        context_attention_mask = attention_mask[0, -context_length:]
+        
+        # Generate multiple next tokens
+        num_tokens_to_generate = 3
+        generated = model.generate(
+            context_tokens.unsqueeze(0),
+            attention_mask=context_attention_mask.unsqueeze(0),
+            max_length=context_length + num_tokens_to_generate,
+            num_return_sequences=top_k,
+            do_sample=True,
+            top_k=50,
+            top_p=0.95,
+            temperature=temperature,
+            pad_token_id=tokenizer.pad_token_id,
+            bos_token_id=tokenizer.bos_token_id,
+            eos_token_id=tokenizer.eos_token_id
+        )
+        
+        # Decode the generated sequences
+        generated_words = [
+            tokenizer.decode(gen[context_length:], skip_special_tokens=True).strip().split()
+            for gen in generated
+        ]
+        
+        # Flatten the list of generated words
+        all_generated_words = [word for sublist in generated_words for word in sublist]
+        
+        # Count occurrences and calculate probabilities
+        word_counts = {}
+        for word in all_generated_words:
+            word_counts[word] = word_counts.get(word, 0) + 1
+        
+        total_count = sum(word_counts.values())
+        context_aware_probs = [
+            (word, count / total_count)
+            for word, count in word_counts.items()
+        ]
+        
+        # Sort by probability and take top k
+        top_k_words_and_probs = sorted(context_aware_probs, key=lambda x: x[1], reverse=True)[:top_k]
+    
+    return top_k_words_and_probs
+
+# Load pre-trained model and tokenizer
+print("Loading model and tokenizer...")
+model_name = "gpt2-large"  # You can change this to other models like "gpt2-medium", "gpt2-large", etc.
+model = AutoModelForCausalLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+print("Model and tokenizer loaded successfully.")
+
+# Get user input
+input_text = input("Enter a word, phrase, or sentence: ")
+temperature = float(input("Enter temperature (0.1-2.0, default is 1.0): ") or 1.0)
+
+# Get and display predictions
+next_word_probs = get_next_word_probabilities(input_text, model, tokenizer, temperature=temperature)
+
+print(f"\nTop 10 predicted next words and their probabilities (temperature = {temperature}):")
+for word, prob in next_word_probs:
+    print(f"{word}: {prob:.4f}")
+
+print("\nPrediction complete.")

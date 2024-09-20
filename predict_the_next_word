@@ -1,0 +1,62 @@
+import openai
+import os
+from openai import OpenAI
+from dotenv import load_dotenv
+# Load environment variables from .env file
+load_dotenv()
+
+
+def get_next_word_probabilities_openai(input_text, model="gpt-3.5-turbo", top_k=10, temperature=0.7):
+    client = OpenAI()
+    
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that predicts the next word in a sentence. Provide only the next word, no punctuation or explanation."},
+                {"role": "user", "content": f"Complete this sentence with the next single word, providing {top_k} different options:\n{input_text}"}
+            ],
+            max_tokens=50,
+            n=1,
+            temperature=temperature,
+        )
+        
+        content = response.choices[0].message.content.strip()
+        words = content.split()
+        unique_words = list(dict.fromkeys(words))[:top_k]
+        
+        total_words = len(unique_words)
+        words_and_probs = [
+            (word, 1 - (i / total_words)) 
+            for i, word in enumerate(unique_words)
+        ]
+        
+        return words_and_probs
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
+
+def main():
+    print("Welcome to the Interactive Next Word Predictor!")
+    print("Enter a sentence, and I'll predict the next word.")
+    print("Type 'quit' to exit the program.")
+
+    while True:
+        input_text = input("\nEnter your sentence: ")
+        
+        if input_text.lower() == 'quit':
+            print("Thank you for using the Interactive Next Word Predictor. Goodbye!")
+            break
+        
+        predictions = get_next_word_probabilities_openai(input_text, top_k=10)
+        
+        if predictions:
+            print("\nPredicted next words:")
+            for word, prob in predictions:
+                print(f"Word: {word}, Probability: {prob:.4f}")
+        else:
+            print("No predictions were generated. Please try again.")
+
+if __name__ == "__main__":
+    main()
