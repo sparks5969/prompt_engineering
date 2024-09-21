@@ -41,6 +41,7 @@ Pipfile.lock
 venv/
 env/
 .env/
+.env
 .virtualenv/
 
 # Python
